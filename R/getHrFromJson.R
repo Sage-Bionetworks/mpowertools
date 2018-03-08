@@ -20,7 +20,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
   #############################################################
   
   # If no json file exists
-  dat1 = data.frame(red = NA, green = NA, blue = NA, error = NA)
+  dat1 = list(red = NA, green = NA, blue = NA, error = NA)
   if(is.na(hrJsonFileLoc)){dat1$error = 'No JSON file'; return(dat1) }
   
   # Get HR data
