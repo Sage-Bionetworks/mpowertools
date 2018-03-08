@@ -30,6 +30,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
   
   # Get sampling rate
   samplingRate = length(dat$timestamp)/(dat$timestamp[length(dat$timestamp)] - dat$timestamp[1])
+  if(samplingRate < 55){dat1$error = 'Low Sampling Rate,atleast 55FPS needed'; return(dat1) }
   
   # Convert window length from seconds to samples
   windowLen = round(samplingRate*windowLen)
@@ -86,8 +87,8 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
     # Sorted Mean filter the given signal
     y = 0*x
     for (i in seq((mforder+1)/2, length(x)-(mforder-1)/2,1)){
-      tempseq <- sort(x[(i-((mforder-1)/2)):((i+((mforder-1)/2)))])
-      y[i] = x[i]-mean(tempseq[1:(length(tempseq)-1)])
+      tempseq <- (x[(i-((mforder-1)/2)):((i+((mforder-1)/2)))])
+      y[i] = x[i]-(sum(tempseq)-max(tempseq))/(mforder-1)
     }
     return(y)
  }
