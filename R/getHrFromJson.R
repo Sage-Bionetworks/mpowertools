@@ -29,8 +29,9 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
     if(all(is.na(dat))){dat1$error = 'JSON file read error'; return(dat1) }
   
   # Get sampling rate
-  samplingRate = length(dat$timestamp)/(dat$timestamp[length(dat$timestamp)] - dat$timestamp[1])
-  if(!is.finite(samplingRate)){dat1$error = 'Sampling Rate calculated from timestamp is Inf or NaN'; return(dat1) }
+  samplingRate = tryCatch({ length(dat$timestamp)/(dat$timestamp[length(dat$timestamp)] - dat$timestamp[1]) }, 
+                 error = function(e){ NA })
+  if(!is.finite(samplingRate)){dat1$error = 'Sampling Rate calculated from timestamp is Inf or NaN / timestamp not found in json'; return(dat1) }
   
   # Convert window length from seconds to samples
   windowLen = round(samplingRate*windowLen)
@@ -39,7 +40,9 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
   mforder = 2*round(60*samplingRate/220) + 1 # order for the running mean based filter
   
   # Split each color into segments based on windowLen
-  dat = dat %>% dplyr::select(red, green, blue) %>% lapply(mpowertools:::windowSignal, windowLen, ovlp=0.5)
+  dat = tryCatch({ dat %>% dplyr::select(red, green, blue) %>% lapply(mpowertools:::windowSignal, windowLen, ovlp=0.5) }, 
+                 error = function(e){ NA })
+    if(all(is.na(dat))){dat1$error = 'red, green, blue cannot be read from JSON'; return(dat1) }
   
   # Apply filter to each segment of each color
   dat <- dat %>% lapply(function(dfl){
