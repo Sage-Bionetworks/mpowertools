@@ -31,7 +31,6 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
   # Get sampling rate
   samplingRate = length(dat$timestamp)/(dat$timestamp[length(dat$timestamp)] - dat$timestamp[1])
   if(!is.finite(samplingRate)){dat1$error = 'Sampling Rate calculated from timestamp is Inf or NaN'; return(dat1) }
-  if(samplingRate < 55){dat1$error = 'Low Sampling Rate,atleast 55FPS needed'; return(dat1) }
   
   # Convert window length from seconds to samples
   windowLen = round(samplingRate*windowLen)
@@ -61,6 +60,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
   if(all(is.na(dat))){dat1$error = 'HR calculation error'; return(dat1) }
   
   dat$error = 'none'
+  if(samplingRate < 55){dat$error = 'Low Sampling Rate,atleast 55FPS needed'}
   
   return(dat)
   
@@ -79,9 +79,16 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
     x = x-mean(x) #Mean centering the signal
     
     # Bandpass filter the given time series data
-    bandPassFilt = signal::fir1(bpforder-1, c(freqRange[1] * 2/samplingRate, freqRange[2] * 2/samplingRate),
+   if(samplingRate > 55){ 
+   bandPassFilt = signal::fir1(bpforder-1, c(freqRange[1] * 2/samplingRate, freqRange[2] * 2/samplingRate),
                                 type="pass", 
                                 window = seewave::hamming.w(bpforder))
+   }else{
+   bandPassFilt = signal::fir1(bpforder/2, freqRange[1] * 2/samplingRate, # the order for a high pass filter needs to be even
+                                type="high", 
+                                window = seewave::hamming.w(bpforder/2+1))   
+   }
+  
     x = signal::filtfilt(bandPassFilt, x)
     x = x[((bpforder/2)+1):(length(x)-(bpforder/2)+1)]
     
