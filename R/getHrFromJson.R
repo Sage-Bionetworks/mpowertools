@@ -84,9 +84,9 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
                                 type="pass", 
                                 window = seewave::hamming.w(bpforder))
    }else{
-   bandPassFilt = signal::fir1(bpforder/2, freqRange[1] * 2/samplingRate, # the order for a high pass filter needs to be even
+   bandPassFilt = signal::fir1(bpforder, freqRange[1] * 2/samplingRate, # the order for a high pass filter needs to be even
                                 type="high", 
-                                window = seewave::hamming.w(bpforder/2+1))   
+                                window = seewave::hamming.w(bpforder+1))   
    }
   
     x = signal::filtfilt(bandPassFilt, x)
