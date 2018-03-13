@@ -20,7 +20,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
   #############################################################
   
   # If no json file exists
-  dat1 = list(red = NA, green = NA, blue = NA, error = NA)
+  dat1 = list(red = NA, green = NA, blue = NA, error = NA, samplingRate = NA)
   if(is.na(hrJsonFileLoc)){dat1$error = 'No JSON file'; return(dat1) }
   
   # Get HR data
@@ -31,9 +31,9 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
   # Get sampling rate
   samplingRate = tryCatch({ length(dat$timestamp)/(dat$timestamp[length(dat$timestamp)] - dat$timestamp[1]) }, 
                  error = function(e){ NA })
-  if(!is.finite(samplingRate)){dat1$error = 'Sampling Rate calculated from timestamp is Inf or NaN / timestamp not found in json'; return(dat1) }
+  if(!is.finite(samplingRate)){dat1$samplingRate = samplingRate,dat1$error = 'Sampling Rate calculated from timestamp is Inf or NaN / timestamp not found in json'; return(dat1) }
   if(samplingRate < 55){if(samplingRate > 22){bpforder = 64}else{bpforder = 32}}
-  
+  dat1$samplingRate = samplingRate
   # Convert window length from seconds to samples
   windowLen = round(samplingRate*windowLen)
   
@@ -65,7 +65,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
   
   dat$error = 'none'
   if(samplingRate < 55){dat$error = 'Low Sampling Rate,atleast 55FPS needed'}
-  
+  dat$samplingRate = samplingRate
   return(dat)
   
 }
