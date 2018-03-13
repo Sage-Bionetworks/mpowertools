@@ -32,6 +32,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
   samplingRate = tryCatch({ length(dat$timestamp)/(dat$timestamp[length(dat$timestamp)] - dat$timestamp[1]) }, 
                  error = function(e){ NA })
   if(!is.finite(samplingRate)){dat1$error = 'Sampling Rate calculated from timestamp is Inf or NaN / timestamp not found in json'; return(dat1) }
+  if(samplingRate < 55){if(samplingRate > 22){bpforder = 64}else{bpforder = 32}}
   
   # Convert window length from seconds to samples
   windowLen = round(samplingRate*windowLen)
