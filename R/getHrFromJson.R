@@ -113,10 +113,10 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
     y <- 0*x
     y[round(60*samplingRate/maxHR):round(60*samplingRate/minHR)] = x[round(60*samplingRate/maxHR):round(60*samplingRate/minHR)]
     confidence = max(y)/max(x)
-    hr = 60*samplingRate/(which(y==max(y))-1)
+    hr = 60*samplingRate/(which.max(y)-1)
     
     # If hr or condidence is NaN, then return hr = 0 and confidence = 0
-    if(is.na(confidence) || is.na(hr)){
+    if(!(is.finite(confidence) || is.finite(hr))){
       confidence = NA
       hr = NA
     }
