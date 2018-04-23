@@ -103,8 +103,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
      # y[i] = x[i]-(sum(tempseq)-max(tempseq))/(mforder-1)
       
       tempseq <- tempseq - mean(tempseq)
-     # y[i] = (x[i]-(sum(tempseq)-max(tempseq))/(mforder-1))/(max(tempseq)-min(tempseq) + 0.0000001)
-      y[i] = (x[i]-(sum(tempseq)-max(tempseq))/(mforder-1))/(sqrt(sum(tempseq^2)))
+      y[i] = sign(x[i])*((x[i]-(sum(tempseq)-max(tempseq))/(mforder-1))/(max(tempseq)-min(tempseq) + 0.0000001))^2
     }
     return(y)
  }
