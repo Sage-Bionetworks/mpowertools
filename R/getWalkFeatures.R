@@ -1,0 +1,226 @@
+####### MAIN
+#' extracts features from accelerometer and gyroscope reading of walk task outbound JSON data file
+#'
+#'
+#' @param walkJsonFileLoc path to walk accelerometer/gyroscope json file
+#' @return data frame of walk features
+#' @export
+#' @examples
+#' @author Thanneer Malai Perumal, Meghasyam Tummalacherla 
+getWalkFeatures <- function(walkJsonFileLoc, windowLen = 256, freqRange = c(1, 25), ovlp = 0.5) {
+  
+  # If no json file exists
+  ftrs = data.frame(Window = NA, error = NA)
+  if(is.na(walkJsonFileLoc)){ ftrs$error = 'No JSON file'; return(ftrs) }
+  
+  # Read contents of JSON file
+  dat = tryCatch({ jsonlite::fromJSON(as.character(walkJsonFileLoc)) }, 
+                 error = function(e){ NA })
+  if(all(is.na(dat))){ ftrs$error = 'JSON file read error'; return(ftrs) }
+  
+  # Get sampling rate
+  samplingRate = length(dat$timestamp)/(dat$timestamp[length(dat$timestamp)] - dat$timestamp[1])
+  
+  # Get accelerometer features
+  ftrs.acc = mpowertools:::getWalkFeatures.userAccel(dat, samplingRate, windowLen = windowLen, freqRange = freqRange, ovlp = ovlp)
+  
+  # Get accelerometer features
+  ftrs.gyro = mpowertools:::getWalkFeatures.rotRate(dat, samplingRate, windowLen = windowLen, freqRange = freqRange, ovlp = ovlp)
+  
+  # Return if processing is errored
+  if(!is.na(ftrs.acc$error) || !is.na(ftrs.gyro$error)){
+    return(list(accelerometer = ftrs.acc, gyroscope = ftrs.gyro) %>%
+             data.table::rbindlist(use.names = TRUE, fill = T, idcol = 'sensor'))
+  }
+  
+  # Combine all features
+  ftrs = list(accelerometer = ftrs.acc, gyroscope = ftrs.gyro) %>%
+    data.table::rbindlist(use.names = TRUE, fill = T, idcol = 'sensor') %>%
+    dplyr::mutate(Window = as.character(Window))
+  
+  return(ftrs)
+}
+
+# Function to extract walk features from user acceleration
+getWalkFeatures.userAccel <- function(dat, samplingRate, windowLen = 256, freqRange = c(1, 25), ovlp = 0.5) {
+  
+  ftrs = data.frame(Window = NA, error = NA)
+  
+  # Get user acceleration
+  userAccel = tryCatch({
+    userAccel = cbind(timestamp = dat$timestamp-dat$timestamp[1],
+                      dat$userAcceleration) %>%
+      as.data.frame()
+    ind = order(userAccel$timestamp)
+    userAccel = userAccel[ind, ] %>%
+      tidyr::gather(axis, accel, -timestamp)
+  }, error = function(e){ NA })
+  if(all(is.na(userAccel))){ ftrs$error = 'userAccel extraction error'; return(ftrs) }
+  
+  # Detrend data
+  userAccel = tryCatch({
+    userAccel %>%
+      plyr::ddply(.variables = 'axis', .fun = function(x){
+        x$accel = loess(x$accel~x$timestamp)$residual
+        return(x)
+      })
+  }, error = function(e){ NA })
+  if(all(is.na(userAccel))){ ftrs$error = 'Detrend error'; return(ftrs) }
+  
+  # Band pass filter signal between freqRange
+  userAccel = tryCatch({
+    userAccel %>% 
+      plyr::ddply(.variables = 'axis', .fun = function(x, windowLen, sl, freqRange){
+        bandPassFilt = signal::fir1(windowLen-1, c(freqRange[1] * 2/sl, freqRange[2] * 2/sl),
+                                    type="pass", 
+                                    window = seewave::hamming.w(windowLen))
+        x$accel = signal::filtfilt(bandPassFilt, x$accel)
+        return(x)
+      }, windowLen, samplingRate, freqRange)
+  }, error = function(e){ NA })
+  if(all(is.na(userAccel))){ ftrs$error = 'Band pass filter error'; return(ftrs) }
+  
+  # Filter signal between 1 and last sec
+  userAccel = tryCatch({
+    userAccel %>%
+      dplyr::filter(timestamp >= userAccel$timestamp[round(samplingRate)], 
+                    timestamp <= userAccel$timestamp[length(userAccel$timestamp) - round(samplingRate)])
+  }, error = function(e){ NA })
+  if(all(is.na(userAccel))){ ftrs$error = 'Not enough time samples'; return(ftrs) }
+  
+  # Split user acceleration into windows
+  userAccel  = userAccel %>%
+    plyr::dlply(.variables = 'axis', .fun = function(accel, windowLen, ovlp){
+      a = mpowertools:::windowSignal(accel$accel, windowLen = windowLen, ovlp = ovlp) 
+    }, windowLen, ovlp)
+  
+  # Get user jerk
+  userJerk = userAccel %>%
+    lapply(function(accel, sl){
+      apply(accel,2, diff)*sl
+    }, samplingRate)
+  
+  # Get user velocity
+  userVel = userAccel %>%
+    lapply(function(accel, sl){
+      apply(accel,2, diffinv)*sl
+    }, samplingRate)
+  
+  # Get user displacement
+  userDisp = userVel %>%
+    lapply(function(accel, sl){
+      apply(accel,2, diffinv)*sl
+    }, samplingRate)
+  
+  # Get acf of user accel
+  userACF = userAccel %>%
+    lapply(function(accel, sl){
+      apply(accel,2, function(x){acf(x, plot = F)$acf})
+    }, samplingRate)
+  
+  # Get time and frequency domain features for angular velocity, acceleration, displacement, auto correlation of velocity
+  ftrs = list(ua = userAccel, uj = userJerk, uv = userVel,  ud = userDisp, uaacf = userACF) %>%
+    plyr::ldply(.fun = function(userAccel){
+      plyr::ldply(userAccel, .fun = function(accel){
+        list(apply(accel, 2, mpowertools:::getTimeDomainSummary, samplingRate) %>%
+               data.table::rbindlist(use.names = T, fill = T, idcol = 'Window'),
+             apply(accel, 2, mpowertools:::getFrequencyDomainSummary, samplingRate = samplingRate, npeaks = 3) %>%
+               data.table::rbindlist(use.names = T, fill = T, idcol = 'Window'),
+             apply(accel, 2, mpowertools:::getFrequencyDomainEnergy, samplingRate) %>%
+               data.table::rbindlist(use.names = T, fill = T, idcol = 'Window')) %>%
+          plyr::join_all(by = 'Window')
+      }, .id = 'axis')
+    }, .id = 'measurementType') %>%
+    dplyr::mutate(error = NA)
+  
+  return(ftrs)
+}
+
+# Function to extract walk features from user angular velocity from gyroscope
+getWalkFeatures.rotRate <- function(dat, samplingRate, windowLen = 256, freqRange = c(1, 25), ovlp = 0.5) {
+  
+  ftrs = data.frame(Window = NA, error = NA)
+  
+  # Get user angular velocity from gyro data
+  userAngVel = tryCatch({
+    userAngVel = cbind(timestamp = dat$timestamp-dat$timestamp[1],
+                       dat$rotationRate) %>% 
+      as.data.frame()
+    ind = order(userAngVel$timestamp)
+    userAngVel = userAngVel[ind, ] %>%
+      tidyr::gather(axis, angvel, -timestamp)
+  }, error = function(e){ NA })
+  if(all(is.na(userAngVel))){ ftrs$error = 'userAccel rotation error'; return(ftrs) }
+  
+  # Detrend data
+  userAngVel = tryCatch({
+    userAngVel %>%
+      plyr::ddply(.variables = 'axis', .fun = function(x){
+        x$angvel = loess(x$angvel~x$timestamp)$residual
+        x <- return(x)
+      })
+  }, error = function(e){ NA })
+  if(all(is.na(userAngVel))){ ftrs$error = 'Detrend error'; return(ftrs) }
+  
+  # Band pass filter signal between freqRange
+  userAngVel = tryCatch({
+    userAngVel %>% 
+      plyr::ddply(.variables = 'axis', .fun = function(x, windowLen, sl, freqRange){
+        bandPassFilt = signal::fir1(windowLen-1, c(freqRange[1] * 2/sl, freqRange[2] * 2/sl),
+                                    type="pass", 
+                                    window = seewave::hamming.w(windowLen))
+        x$angvel = signal::filtfilt(bandPassFilt, x$angvel)
+        return(x)
+      }, windowLen, samplingRate, freqRange)
+  }, error = function(e){ NA })
+  if(all(is.na(userAngVel))){ ftrs$error = 'Band pass filter error'; return(ftrs) }
+  
+  # Filter signal between 1 and 9 sec
+  userAngVel = tryCatch({
+    userAngVel %>%
+      dplyr::filter(timestamp >= userAngVel$timestamp[round(samplingRate)], 
+                    timestamp <= userAngVel$timestamp[length(userAngVel$timestamp) - round(samplingRate)])
+  }, error = function(e){ NA })
+  if(all(is.na(userAngVel))){ ftrs$error = 'Not enough time samples'; return(ftrs) }
+  
+  # Split user acceleration into windows
+  userAngVel  = userAngVel %>%
+    plyr::dlply(.variables = 'axis', .fun = function(angvel, windowLen, ovlp){
+      a = mpowertools:::windowSignal(angvel$angvel, windowLen = windowLen, ovlp = ovlp) 
+    }, windowLen, ovlp)
+  
+  # Get user angular acceleration
+  userAngAcc = userAngVel %>%
+    lapply(function(angvel, sl){
+      apply(angvel, 2, diff)*sl
+    }, samplingRate)
+  
+  # Get user angular displacement
+  userAngDis = userAngVel %>%
+    lapply(function(angvel, sl){
+      apply(angvel,2, diffinv)*sl
+    }, samplingRate)
+  
+  # Get user acf (ACF of user angular velocity)
+  userACF = userAngVel %>%
+    lapply(function(angvel, sl){
+      apply(angvel,2, function(x){acf(x, plot = F)$acf})
+    }, samplingRate)
+  
+  # Get time and frequency domain features for angular velocity, acceleration, displacement, auto correlation of velocity
+  ftrs = list(uav = userAngVel, uaa = userAngAcc, uad = userAngDis,  uavacf = userACF) %>%
+    plyr::ldply(.fun = function(userAccel){
+      plyr::ldply(userAccel, .fun = function(accel){
+        list(apply(accel, 2, mpowertools:::getTimeDomainSummary, samplingRate) %>%
+               data.table::rbindlist(use.names = T, fill = T, idcol = 'Window'),
+             apply(accel, 2, mpowertools:::getFrequencyDomainSummary, samplingRate = samplingRate, npeaks = 3) %>%
+               data.table::rbindlist(use.names = T, fill = T, idcol = 'Window'),
+             apply(accel, 2, mpowertools:::getFrequencyDomainEnergy, samplingRate) %>%
+               data.table::rbindlist(use.names = T, fill = T, idcol = 'Window')) %>%
+          plyr::join_all(by = 'Window')
+      }, .id = 'axis')
+    }, .id = 'measurementType') %>%
+    dplyr::mutate(error = NA)
+  
+  return(ftrs)
+}
