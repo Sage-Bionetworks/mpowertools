@@ -7,7 +7,7 @@
 #' @export
 #' @examples
 #' @author Thanneer Malai Perumal, Meghasyam Tummalacherla 
-getWalkFeatures <- function(walkJsonFileLoc, windowLen = 256, freqRange = c(1, 25), ovlp = 0.5) {
+getWalkFeatures2 <- function(walkJsonFileLoc, windowLen = 256, freqRange = c(1, 25), ovlp = 0.5) {
   
   # If no json file exists
   ftrs = data.frame(Window = NA, error = NA)
