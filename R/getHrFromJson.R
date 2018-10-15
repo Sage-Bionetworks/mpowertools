@@ -13,7 +13,7 @@
 # Wrapper function to take in json and give HR per color channel
 #############################################################
 
-getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25), bpforder = 128){
+getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(0.66,3.5), bpforder = 128){
 
   #############################################################
   # Main Code Block
@@ -76,7 +76,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
 
 # Bandpass and sorted mean filter the given signal
   
- getfilteredsignal <- function(x, mforder = 33, bpforder = 128, freqRange=c(2,25), samplingRate){
+ getfilteredsignal <- function(x, mforder = 33, bpforder = 128, freqRange=c(0.66,3.5), samplingRate){
   
     # Defaults are set for 60Hz sampling rate
     x[is.na(x)]<-0
