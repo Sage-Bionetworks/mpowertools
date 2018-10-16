@@ -110,28 +110,27 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
   
   # Given a processed time series find its period using autocorrelation and then convert it to HR (bpm)
   
- getHR <- function(x, samplingRate, minHR = 40, maxHR=200,methodIn='acf'){
+ getHR <- function(x, samplingRate, minHR = 40, maxHR=200,methodIn='NOTacf'){
     x[is.na(x)] <- 0
    
-   if(methodIn == 'acf'){
-    x <- stats::acf(x,lag.max = 1000, plot=F)$acf
-    y <- 0*x
-    y[round(60*samplingRate/maxHR):round(60*samplingRate/minHR)] = x[round(60*samplingRate/maxHR):round(60*samplingRate/minHR)]
-    confidence = max(y)/max(x)
-    hr = 60*samplingRate/(which.max(y)-1)
-    }else{
+   if(methodIn == 'NOTacf'){
      fftx <- abs(fft(x))
      N <- length(fftx)
      y <- 0*fftx
      # 0.66 = 40/60, 3.5 = 210/60
      y[round(0.66*N/samplingRate):round(3.5*N/samplingRate)] = fftx[round(0.66*N/samplingRate):round(3.5*N/samplingRate)]
-     estHR_fft <- 60*(which.max(y)-1)*samplingRate/N
-     
+     estHR_fft <- 60*(which.max(y)-1)*samplingRate/N     
      x <- stats::acf(x,lag.max = 1000, plot=F)$acf
      y <- 0*x
      y[round(60*samplingRate/(min(estHR_fft+15,maxHR))):round(60*samplingRate/(max(estHR_fft-15,minHR)))] = x[round(60*samplingRate/(min(estHR_fft+15,maxHR))):round(60*samplingRate/(max(estHR_fft-15,minHR)))]
      confidence = max(y)/max(x)
      hr = 60*samplingRate/(which.max(y)-1)    
+    }else{
+    x <- stats::acf(x,lag.max = 1000, plot=F)$acf
+    y <- 0*x
+    y[round(60*samplingRate/maxHR):round(60*samplingRate/minHR)] = x[round(60*samplingRate/maxHR):round(60*samplingRate/minHR)]
+    confidence = max(y)/max(x)
+    hr = 60*samplingRate/(which.max(y)-1)
      }
     # If hr or condidence is NaN, then return hr = 0 and confidence = 0
     if(is.na(confidence) || is.na(hr)){
