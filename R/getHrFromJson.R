@@ -13,7 +13,7 @@
 # Wrapper function to take in json and give HR per color channel
 #############################################################
 
-getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(0.66,3.5), bpforder = 128){
+getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25), bpforder = 128, method = 'acf'){
 
   #############################################################
   # Main Code Block
@@ -56,7 +56,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(0.66,3
   # Get HR for each filtered segment of each color
   dat <- dat %>% lapply(function(dfl){
     dfl = tryCatch({
-      apply(dfl,2,mpowertools:::getHR,samplingRate)}, error = function(e){ NA })
+      apply(dfl,2,mpowertools:::getHR,samplingRate,methodIn=method)}, error = function(e){ NA })
     dfl = as.data.frame(t(dfl))
     colnames(dfl) = c('hr','confidence')
     return(dfl)
@@ -76,7 +76,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(0.66,3
 
 # Bandpass and sorted mean filter the given signal
   
- getfilteredsignal <- function(x, mforder = 33, bpforder = 128, freqRange=c(0.66,3.5), samplingRate){
+ getfilteredsignal <- function(x, mforder = 33, bpforder = 128, freqRange=c(2,25), samplingRate){
   
     # Defaults are set for 60Hz sampling rate
     x[is.na(x)]<-0
@@ -110,14 +110,29 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(0.66,3
   
   # Given a processed time series find its period using autocorrelation and then convert it to HR (bpm)
   
- getHR <- function(x, samplingRate, minHR = 40, maxHR=200){
+ getHR <- function(x, samplingRate, minHR = 40, maxHR=200,methodIn='acf'){
     x[is.na(x)] <- 0
+   
+   if(methodIn == 'acf'){
     x <- stats::acf(x,lag.max = 1000, plot=F)$acf
     y <- 0*x
     y[round(60*samplingRate/maxHR):round(60*samplingRate/minHR)] = x[round(60*samplingRate/maxHR):round(60*samplingRate/minHR)]
     confidence = max(y)/max(x)
     hr = 60*samplingRate/(which.max(y)-1)
-    
+    }else{
+     fftx <- abs(fft(x))
+     N <- length(fftx)
+     y <- 0*fftx
+     # 0.66 = 40/60, 3.5 = 210/60
+     y[round(0.66*N/samplingRate):round(3.5*N/samplingRate)] = fftx[round(0.66*N/samplingRate):round(3.5*N/samplingRate)]
+     estHR_fft <- 60*(which.max(y)-1)/samplingRate
+     
+     x <- stats::acf(x,lag.max = 1000, plot=F)$acf
+     y <- 0*x
+     y[round(60*samplingRate/(estHR_fft+15)):round(60*samplingRate/(estHR_fft-15))] = x[round(60*samplingRate/(estHR_fft+15)):round(60*samplingRate/(estHR_fft-15))]
+     confidence = max(y)/max(x)
+     hr = 60*samplingRate/(which.max(y)-1)    
+     }
     # If hr or condidence is NaN, then return hr = 0 and confidence = 0
     if(is.na(confidence) || is.na(hr)){
       confidence = NA
