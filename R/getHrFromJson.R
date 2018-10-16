@@ -76,7 +76,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(0.66,1
 
 # Bandpass and sorted mean filter the given signal
   
- getfilteredsignal <- function(x, mforder = 33, bpforder = 128, freqRange=c(2,25), samplingRate){
+ getfilteredsignal <- function(x, mforder = 33, bpforder = 128, freqRange=c(0.66,15), samplingRate){
   
     # Defaults are set for 60Hz sampling rate
     x[is.na(x)]<-0
