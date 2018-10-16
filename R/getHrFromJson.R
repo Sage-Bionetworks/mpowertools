@@ -125,7 +125,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
      y <- 0*fftx
      # 0.66 = 40/60, 3.5 = 210/60
      y[round(0.66*N/samplingRate):round(3.5*N/samplingRate)] = fftx[round(0.66*N/samplingRate):round(3.5*N/samplingRate)]
-     estHR_fft <- 60*(which.max(y)-1)/samplingRate
+     estHR_fft <- 60*(which.max(y)-1)*samplingRate/N
      
      x <- stats::acf(x,lag.max = 1000, plot=F)$acf
      y <- 0*x
