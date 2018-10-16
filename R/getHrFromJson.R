@@ -83,7 +83,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(0.66,3
     x = x-mean(x) #Mean centering the signal
     
     # Bandpass filter the given time series data
-   if(samplingRate > 55){ 
+   if(samplingRate > 2*freqRange[2]){ 
    bandPassFilt = signal::fir1(bpforder-1, c(freqRange[1] * 2/samplingRate, freqRange[2] * 2/samplingRate),
                                 type="pass", 
                                 window = seewave::hamming.w(bpforder))
