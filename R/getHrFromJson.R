@@ -129,7 +129,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(1,25),
      
      x <- stats::acf(x,lag.max = 1000, plot=F)$acf
      y <- 0*x
-     y[round(60*samplingRate/(estHR_fft+15)):round(60*samplingRate/(estHR_fft-15))] = x[round(60*samplingRate/(estHR_fft+15)):round(60*samplingRate/(estHR_fft-15))]
+     y[round(60*samplingRate/(min(estHR_fft+15,maxHR))):round(60*samplingRate/(max(estHR_fft-15,minHR)))] = x[round(60*samplingRate/(min(estHR_fft+15,maxHR))):round(60*samplingRate/(max(estHR_fft-15,minHR)))]
      confidence = max(y)/max(x)
      hr = 60*samplingRate/(which.max(y)-1)    
      }
