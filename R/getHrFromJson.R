@@ -147,7 +147,7 @@ getHR <- function(x, samplingRate, minHR = 40, maxHR = 200){
   if(error == 'NONE'){
     return(yHR)
   }else{
-    return(c(NA, NA))
+    return(c(NA, 0))
   }
 }
 
