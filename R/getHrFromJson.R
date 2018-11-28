@@ -20,6 +20,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(0.5,4)
   if(all(is.na(dat))){dat1$error = 'JSON file read error'; return(dat1) }
   
   # Get sampling rate
+  dat$timestamp <- dat$timestamp - dat$timestamp[1]
   samplingRate = tryCatch({ length(dat$timestamp)/(dat$timestamp[length(dat$timestamp)] - dat$timestamp[1]) }, 
                           error = function(e){ NA })
   if(!is.finite(samplingRate)){dat1$error = 'Sampling Rate calculated from timestamp is Inf or NaN / timestamp not found in json'; return(dat1) }
