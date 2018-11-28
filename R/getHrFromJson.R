@@ -1,12 +1,3 @@
-####### MAIN
-#' extracts hr for each color band from avg pixel value per frame of video (processed hr) JSON data file
-#'
-#'
-#' @param hrJsonFileLoc path to hr json file
-#' @return list containing hr and confidence of the estimate for each color (red, green, blue)
-#' @export
-#' @examples
-#' @author Meghasyam Tummalacherla 
 
 
 #############################################################
@@ -42,7 +33,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(0.5,4)
   
   # Split each color into segments based on windowLen
   dat = tryCatch({ dat %>% dplyr::select(red, green, blue) %>% na.omit() %>% 
-      lapply(window_signal, windowLen, ovlp=0.5) }, 
+      lapply(window_signal, windowLen, 0.5) }, 
       error = function(e){ NA })
   if(all(is.na(dat))){dat1$error = 'red, green, blue cannot be read from JSON'; return(dat1) }
   
