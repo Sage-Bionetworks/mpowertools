@@ -100,27 +100,8 @@ getHR <- function(x, samplingRate, minHR = 40, maxHR = 200){
   # Apply pre processing filter signal between freqRange
   mforder = 4*round(60*samplingRate/220) + 1 # order for the running mean based filter
   
-  y <- getfilteredsignal(x, mforder = mforder,samplingRate = samplingRate,
-                         freqRange = c(0.5,4))
-  yHR <- getHrFromTimeSeries(y, samplingRate = samplingRate,
-                             minHR = minHR, maxHR = maxHR)
-  
-  if(yHR[2] < 0.5){
-    y <- getfilteredsignal(x, mforder = mforder,
-                           freqRange = c(0.5,2), samplingRate = samplingRate)
-    yHR <- getHrFromTimeSeries(y, samplingRate = samplingRate,
-                               minHR = 40, maxHR = 120)
-    if(yHR[2] < 0.5){
-      y <- getfilteredsignal(x, mforder = mforder,
-                             freqRange = c(1,4), samplingRate = samplingRate)
-      yHR <- getHrFromTimeSeries(y, samplingRate = samplingRate,
-                                 minHR = 60, maxHR = 240)
-    }
-  }
-  
-  if(yHR[2] < 0.5){
-    mforder = 2*round(60*samplingRate/220) + 1 # order for the running mean based filter
-    
+  error <- 'NONE'
+  error <- tryCatch({
     y <- getfilteredsignal(x, mforder = mforder,samplingRate = samplingRate,
                            freqRange = c(0.5,4))
     yHR <- getHrFromTimeSeries(y, samplingRate = samplingRate,
@@ -138,9 +119,36 @@ getHR <- function(x, samplingRate, minHR = 40, maxHR = 200){
                                    minHR = 60, maxHR = 240)
       }
     }
-  }
+    
+    if(yHR[2] < 0.5){
+      mforder = 2*round(60*samplingRate/220) + 1 # order for the running mean based filter
+      
+      y <- getfilteredsignal(x, mforder = mforder,samplingRate = samplingRate,
+                             freqRange = c(0.5,4))
+      yHR <- getHrFromTimeSeries(y, samplingRate = samplingRate,
+                                 minHR = minHR, maxHR = maxHR)
+      
+      if(yHR[2] < 0.5){
+        y <- getfilteredsignal(x, mforder = mforder,
+                               freqRange = c(0.5,2), samplingRate = samplingRate)
+        yHR <- getHrFromTimeSeries(y, samplingRate = samplingRate,
+                                   minHR = 40, maxHR = 120)
+        if(yHR[2] < 0.5){
+          y <- getfilteredsignal(x, mforder = mforder,
+                                 freqRange = c(1,4), samplingRate = samplingRate)
+          yHR <- getHrFromTimeSeries(y, samplingRate = samplingRate,
+                                     minHR = 60, maxHR = 240)
+        }
+      }
+    }
+    error = 'NONE'
+  }, error = function(e){'YES'})
   
-  return(yHR)
+  if(error == 'NONE'){
+    return(yHR)
+  }else{
+    return(c(NA, NA))
+  }
 }
 
 # Given a time series, get HR
