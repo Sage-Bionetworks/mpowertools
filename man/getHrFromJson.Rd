@@ -4,8 +4,8 @@
 \alias{getHrFromJson}
 \title{extracts hr for each color band from avg pixel value per frame of video (processed hr) JSON data file}
 \usage{
-getHrFromJson(hrJsonFileLoc = NA, windowLen = 10, freqRange = c(1, 25),
-  bpforder = 128, method = "NOTacf")
+getHrFromJson(hrJsonFileLoc = NA, windowLen = 10, freqRange = c(0.5,
+  4), bpforder = 128)
 }
 \arguments{
 \item{hrJsonFileLoc}{path to hr json file}
