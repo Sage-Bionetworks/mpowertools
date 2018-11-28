@@ -41,7 +41,7 @@ getHrFromJson <- function(hrJsonFileLoc=NA, windowLen = 10, freqRange = c(0.5,4)
   # Get HR for each filtered segment of each color
   dat <- dat %>% lapply(function(dfl){
     dfl = tryCatch({
-      apply(dfl,2,getHR,samplingRate)}, error = function(e){ NA })
+      apply(dfl,2,getHR,samplingRate)}, error = function(e){ c(NA,NA) })
     dfl = as.data.frame(t(dfl))
     colnames(dfl) = c('hr','confidence')
     return(dfl)
