@@ -91,6 +91,8 @@ output: html_document
 | tkeoX        | teager-kaiser energy operator of the X acceleration series                                                            |
 | F0X          | frequency at which the maximum peak of the Lomb-Scargle periodogram occurred for the X acceleration series            |
 | P0X          | maximum power in the inspected frequency interval of the Lomb-Scargle periodogram for the X acceleration series       |
+| F0FX          | frequency at which the maximum peak of the Lomb-Scargle periodogram occurred for the X acceleration series, with frequencies limited to (0.2,5) Hz |
+| P0FX          | maximum power in the inspected frequency interval of the Lomb-Scargle periodogram for the X acceleration, with frequencies limited to (0.2,5) Hz  series   |
 | meanY        | mean of the Y acceleration series                                                                                     |
 | sdY          | standard deviation of the Y acceleration series                                                                       |
 | modeY        | mode of the Y acceleration series                                                                                     |
@@ -108,6 +110,8 @@ output: html_document
 | tkeoY        | teager-kaiser energy operator of the Y acceleration series                                                            |
 | F0Y          | frequency at which the maximum peak of the Lomb-Scargle periodogram occurred for the Y acceleration series            |
 | P0Y          | maximum power in the inspected frequency interval of the Lomb-Scargle periodogram for the Y acceleration series       |
+| F0FY          | frequency at which the maximum peak of the Lomb-Scargle periodogram occurred for the Y acceleration series, with frequencies limited to (0.2,5) Hz |
+| P0FY         | maximum power in the inspected frequency interval of the Lomb-Scargle periodogram for the Y acceleration, with frequencies limited to (0.2,5) Hz  series   |
 | meanZ        | mean of the Z acceleration series                                                                                     |
 | sdZ          | standard deviation of the Z acceleration series                                                                       |
 | modeZ        | mode of the Z acceleration series                                                                                     |
@@ -125,6 +129,8 @@ output: html_document
 | tkeoZ        | teager-kaiser energy operator of the Z acceleration series                                                            |
 | F0Z          | frequency at which the maximum peak of the Lomb-Scargle periodogram occurred for the Z acceleration series            |
 | P0Z          | maximum power in the inspected frequency interval of the Lomb-Scargle periodogram for the Z acceleration series       |
+| F0FZ          | frequency at which the maximum peak of the Lomb-Scargle periodogram occurred for the Z acceleration series, with frequencies limited to (0.2,5) Hz |
+| P0FZ          | maximum power in the inspected frequency interval of the Lomb-Scargle periodogram for the Z acceleration, with frequencies limited to (0.2,5) Hz  series   |
 | meanAA       | mean of the average acceleration series                                                                               |
 | sdAA         | standard deviation of the average acceleration series                                                                 |
 | modeAA       | mode of the average acceleration series                                                                               |
@@ -142,6 +148,8 @@ output: html_document
 | tkeoAA       | teager-kaiser energy operator of the average acceleration series                                                      |
 | F0AA         | frequency at which the maximum peak of the Lomb-Scargle periodogram occured for the average acceleration series       |
 | P0AA         | maximum power in the inspected frequency interval of the Lomb-Scargle periodogram for the average acceleration series |
+| F0FAA          | frequency at which the maximum peak of the Lomb-Scargle periodogram occurred for the AA acceleration series, with frequencies limited to (0.2,5) Hz |
+| P0FAA          | maximum power in the inspected frequency interval of the Lomb-Scargle periodogram for the AA acceleration, with frequencies limited to (0.2,5) Hz  series   |
 | meanAJ       | mean of the average jerk series                                                                                       |
 | sdAJ         | standard deviation of the average jerk series                                                                         |
 | modeAJ       | mode of the average jerk series                                                                                       |
@@ -159,9 +167,17 @@ output: html_document
 | tkeoAJ       | teager-kaiser energy operator of the average jerk series                                                              |
 | F0AJ         | frequency at which the maximum peak of the Lomb-Scargle periodogram occurred for the average jerk series              |
 | P0AJ         | maximum power in the inspected frequency interval of the Lomb-Scargle periodogram for the average jerk series         |
+| F0FAJ          | frequency at which the maximum peak of the Lomb-Scargle periodogram occurred for the AA acceleration series, with frequencies limited to (0.2,5) Hz |
+| P0FAJ          | maximum power in the inspected frequency interval of the Lomb-Scargle periodogram for the AJ acceleration, with frequencies limited to (0.2,5) Hz  series   |
 | corXY        | correlation between the X and Y acceleration                                                                          |
 | corXZ        | correlation between the X and Z acceleration                                                                          |
 | corYZ        | correlation between the Y and Z acceleration                                                                          |
+
+Where,
+
+AA = sqrt(X^2 + Y^2 + Z^2)
+
+AJ = sqrt((diff(X))^2 + (diff(Y))^2 + (diff(Z))^2)
 
 ## Rest
 
